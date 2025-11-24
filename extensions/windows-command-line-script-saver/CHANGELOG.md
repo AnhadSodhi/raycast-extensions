@@ -1,6 +1,6 @@
 # Windows Command Line Script Saver Changelog
 
-## [Initial Release] - 2025-11-24
+## [Initial Release] - {PR_MERGE_DATE}
 
 - Save Windows Command Prompt scripts with name, working directory, and multiple commands
 - Execute saved scripts and view real-time output
