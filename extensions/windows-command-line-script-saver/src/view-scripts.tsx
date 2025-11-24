@@ -115,14 +115,22 @@ function EditScript({ script, onUpdate }: { script: Script; onUpdate: () => void
     const dir = values.dir.trim();
     const cmds = values.commands.trim().split("\n");
 
-    const storedScripts = await LocalStorage.getItem<string>("scripts");
-    if (storedScripts) {
-      const allScripts: Script[] = JSON.parse(storedScripts);
-      const updatedScripts = allScripts.map((s) => (s.id === script.id ? { ...s, name, dir, commands: cmds } : s));
-      await LocalStorage.setItem("scripts", JSON.stringify(updatedScripts));
-      showToast({ title: "Script Updated", message: "Your changes have been saved." });
-      onUpdate();
-      pop();
+    try {
+      const storedScripts = await LocalStorage.getItem<string>("scripts");
+      if (storedScripts) {
+        const allScripts: Script[] = JSON.parse(storedScripts);
+        const updatedScripts = allScripts.map((s) => (s.id === script.id ? { ...s, name, dir, commands: cmds } : s));
+        await LocalStorage.setItem("scripts", JSON.stringify(updatedScripts));
+        showToast({ title: "Script Updated", message: "Your changes have been saved." });
+        onUpdate();
+        pop();
+      }
+    } catch {
+      showToast({
+        style: Toast.Style.Failure,
+        title: "Error",
+        message: "Failed to update script. Please try again.",
+      });
     }
   }
 
@@ -165,36 +173,61 @@ export default function Command() {
 
   useEffect(() => {
     async function loadScripts() {
-      const storedScripts = await LocalStorage.getItem<string>("scripts");
-      if (storedScripts) {
-        const parsedScripts = JSON.parse(storedScripts);
-        // Sort by lastAccessed, most recent first
-        parsedScripts.sort((a: Script, b: Script) => b.lastAccessed - a.lastAccessed);
-        setScripts(parsedScripts);
+      try {
+        const storedScripts = await LocalStorage.getItem<string>("scripts");
+        if (storedScripts) {
+          const parsedScripts = JSON.parse(storedScripts);
+          // Sort by lastAccessed, most recent first
+          parsedScripts.sort((a: Script, b: Script) => b.lastAccessed - a.lastAccessed);
+          setScripts(parsedScripts);
+        }
+      } catch {
+        showToast({
+          style: Toast.Style.Failure,
+          title: "Error",
+          message: "Failed to load scripts. Please try again.",
+        });
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     }
     loadScripts();
   }, []);
 
   async function updateScriptTimestamp(scriptId: string) {
-    const storedScripts = await LocalStorage.getItem<string>("scripts");
-    if (storedScripts) {
-      const allScripts: Script[] = JSON.parse(storedScripts);
-      const updatedScripts = allScripts.map((s) => (s.id === scriptId ? { ...s, lastAccessed: Date.now() } : s));
-      await LocalStorage.setItem("scripts", JSON.stringify(updatedScripts));
-      // Update local state and re-sort
-      updatedScripts.sort((a, b) => b.lastAccessed - a.lastAccessed);
-      setScripts(updatedScripts);
+    try {
+      const storedScripts = await LocalStorage.getItem<string>("scripts");
+      if (storedScripts) {
+        const allScripts: Script[] = JSON.parse(storedScripts);
+        const updatedScripts = allScripts.map((s) => (s.id === scriptId ? { ...s, lastAccessed: Date.now() } : s));
+        await LocalStorage.setItem("scripts", JSON.stringify(updatedScripts));
+        // Update local state and re-sort
+        updatedScripts.sort((a, b) => b.lastAccessed - a.lastAccessed);
+        setScripts(updatedScripts);
+      }
+    } catch {
+      showToast({
+        style: Toast.Style.Failure,
+        title: "Error",
+        message: "Failed to update script timestamp.",
+      });
     }
   }
 
   async function reloadScripts() {
-    const storedScripts = await LocalStorage.getItem<string>("scripts");
-    if (storedScripts) {
-      const parsedScripts = JSON.parse(storedScripts);
-      parsedScripts.sort((a: Script, b: Script) => b.lastAccessed - a.lastAccessed);
-      setScripts(parsedScripts);
+    try {
+      const storedScripts = await LocalStorage.getItem<string>("scripts");
+      if (storedScripts) {
+        const parsedScripts = JSON.parse(storedScripts);
+        parsedScripts.sort((a: Script, b: Script) => b.lastAccessed - a.lastAccessed);
+        setScripts(parsedScripts);
+      }
+    } catch {
+      showToast({
+        style: Toast.Style.Failure,
+        title: "Error",
+        message: "Failed to reload scripts. Please try again.",
+      });
     }
   }
 
@@ -210,9 +243,18 @@ export default function Command() {
         },
       })
     ) {
-      const updatedScripts = scripts.filter((s) => s.id !== scriptId);
-      setScripts(updatedScripts);
-      await LocalStorage.setItem("scripts", JSON.stringify(updatedScripts));
+      try {
+        const updatedScripts = scripts.filter((s) => s.id !== scriptId);
+        setScripts(updatedScripts);
+        await LocalStorage.setItem("scripts", JSON.stringify(updatedScripts));
+        showToast({ title: "Script Deleted", message: "The script has been removed." });
+      } catch {
+        showToast({
+          style: Toast.Style.Failure,
+          title: "Error",
+          message: "Failed to delete script. Please try again.",
+        });
+      }
     }
   }
 
